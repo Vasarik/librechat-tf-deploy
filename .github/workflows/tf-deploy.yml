@@ -7,6 +7,7 @@ on:
       - "main"
     paths:
       - src/**
+      
 
 permissions:
   id-token: write
