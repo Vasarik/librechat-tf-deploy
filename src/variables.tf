@@ -5,19 +5,19 @@
 variable "stage" {
   type        = string
   description = "(Required) The suffix for the resources created in the specified environment"
-  default     = "openai"
+  default     = "vasariklibrechat"
 }
 
 variable "location" {
   description = "The location used for all resources"
   type        = string
-  default     = "swedencentral"
+  default     = "uksouth"
 }
 
 variable "host" {
   type        = string
   description = "Hostname for the Container Apps Custom Domain"
-  default     = "chat"
+  default     = "vasariklibrechat"
   sensitive   = true
 }
 
@@ -42,7 +42,7 @@ variable "librechat_version" {
   type        = string
   description = "LibreChat version"
   # renovate: datasource=docker depName=ghcr.io/danny-avila/librechat versioning=semver
-  default = "v0.7.7"
+  default = "v0.8.0-rc3"
 }
 
 # variable "librechat_endpoints" {

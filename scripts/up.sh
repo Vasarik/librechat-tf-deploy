@@ -2,7 +2,7 @@
 # Used to bootstrap infrastructure required by Terraform
 
 set -e  # Exit on error
-set -o pipefail  # Exit on pipeline failure
+set -o xtrace pipefail  # Exit on pipeline failure
 
 # Check for jq installation
 if ! command -v jq >/dev/null; then
@@ -17,6 +17,21 @@ error_handler() {
 }
 
 trap 'error_handler $LINENO' ERR
+
+# Sources variables
+if [[ -f ".env" ]]; then
+    source .env
+else
+    # Set env config
+    # change values as needed
+    name="openai"
+    scope="tf"
+    location="swedencentral"
+    tag="$stage"
+
+    # GitHub
+    ghRepo="philwelz/chat"
+fi
 
 # Check and export subscription/tenant if needed
 if [[ -z "$subscriptionId" ]]; then
@@ -33,20 +48,7 @@ else
     echo "Tenant details are set..."
 fi
 
-# Sources variables
-if [[ -f ".env" ]]; then
-    source .env
-else
-    # Set env config
-    # change values as needed
-    name="openai"
-    scope="tf"
-    location="swedencentral"
-    tag="$stage"
-
-    # GitHub
-    ghRepo="philwelz/chat"
-fi
+echo "TenantID: $tenantId , SubscriptionID: $subscriptionId"
 
 # Set default values
 # Resource Group
@@ -126,13 +128,13 @@ else
 fi
 
 # Get managed identity
-managedIdentity=$(az identity list --resource-group $rg --query "[].principalId" -o tsv)
+managedIdentity=$(az identity list --resource-group $rg --query "[].principalId" -o tsv | tr -d '\r')
 
 # Update roles
 az role assignment create \
     --assignee "$managedIdentity" \
     --scope "/subscriptions/$subscriptionId" \
-    --role "Owner"
+    --role "Contributor"
 
 if test $? -ne 0
 then
@@ -143,7 +145,7 @@ else
 fi
 
 # Get storage account id
-storageAccountId=$(az storage account show --name $saName --resource-group $rg --query id -o tsv)
+storageAccountId=$(az storage account show --name $saName --resource-group $rg --query id -o tsv | tr -d '\r')
 
 # Update roles
 az role assignment create \
@@ -185,9 +187,9 @@ else
     echo "federated credential created..."
 fi
 
-gh secret set ARM_CLIENT_ID --body $(az identity list --resource-group $rg --query "[].clientId" -o tsv) --repo $ghRepo
-gh secret set ARM_SUB_ID --body $subscriptionId --repo $ghRepo
-gh secret set ARM_TENANT_ID --body $tenantId --repo $ghRepo
-gh secret set TF_STATE_RG --body $rg --repo $ghRepo
-gh secret set TF_STATE_STAC --body $saName --repo $ghRepo
-gh secret set TF_STATE_CONTAINER --body $scName --repo $ghRepo
+gh.exe secret set ARM_CLIENT_ID --body $(az identity list --resource-group $rg --query "[].clientId" -o tsv) --repo $ghRepo
+gh.exe secret set ARM_SUB_ID --body $subscriptionId --repo $ghRepo
+gh.exe secret set ARM_TENANT_ID --body $tenantId --repo $ghRepo
+gh.exe secret set TF_STATE_RG --body $rg --repo $ghRepo
+gh.exe secret set TF_STATE_STAC --body $saName --repo $ghRepo
+gh.exe secret set TF_STATE_CONTAINER --body $scName --repo $ghRepo
